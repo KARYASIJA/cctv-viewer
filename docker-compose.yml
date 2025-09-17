@@ -1,0 +1,22 @@
+services:
+  cctv-noc-snapshot:
+    build: .
+    container_name: cctv-noc-snapshot
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - RTSP_URL=${RTSP_URL:-rtsp://admin:password@192.168.1.100:554}
+      - CAPTURE_INTERVAL=${CAPTURE_INTERVAL:-5000}
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - AUTH_USERNAME=${AUTH_USERNAME:-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-password}
+    volumes:
+      - ./temp:/app/temp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
