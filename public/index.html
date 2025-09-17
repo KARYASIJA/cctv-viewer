@@ -4,191 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CCTV NOC SNAPSHOT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'spin-slow': 'spin 2s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: #ffffff;
-            border: 2px solid #2c2c2c;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            max-width: 800px;
-            width: 100%;
-        }
-
-        h1 {
-            color: #2c2c2c;
-            margin-bottom: 20px;
-            font-size: 2.5em;
-            font-weight: bold;
-        }
-
-        .status {
-            margin-bottom: 20px;
-            padding: 10px;
-            border-radius: 10px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .status.loading {
-            background: #f5f5f5;
-            color: #333333;
-            border: 1px solid #cccccc;
-        }
-
-        .status.success {
-            background: #ffffff;
-            color: #2c2c2c;
-            border: 1px solid #2c2c2c;
-        }
-
-        .status.error {
-            background: #2c2c2c;
-            color: #ffffff;
-            border: 1px solid #ffffff;
-        }
-
-        .image-container {
-            margin: 20px 0;
-            border-radius: 15px;
-            border: 2px solid #2c2c2c;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            background: #f8f9fa;
-            min-height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        #streamImage {
-            max-width: 100%;
-            max-height: 500px;
-            object-fit: contain;
-            transition: opacity 0.3s ease;
-        }
-
-        .placeholder {
-            color: #666666;
-            font-size: 1.2em;
-            text-align: center;
-        }
-
-        .last-update {
-            color: #666666;
-            font-size: 0.9em;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f0f0f0;
-            border: 1px solid #cccccc;
-            border-radius: 10px;
-        }
-
+        
         .refresh-indicator {
-            display: inline-block;
             animation: spin 1s linear infinite;
-            margin-right: 5px;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        button {
-            background: #2c2c2c;
-            color: #ffffff;
-            border: 2px solid #ffffff;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        button:hover {
-            background: #ffffff;
-            color: #2c2c2c;
-            border: 2px solid #2c2c2c;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 20px;
-                margin: 10px;
-            }
-            
-            h1 {
-                font-size: 2em;
-            }
-            
-            .image-container {
-                min-height: 300px;
-            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>CCTV NOC</h1>
+<body class="bg-black min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div class="glass rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 w-full max-w-4xl border border-white">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-black mb-2">
+                CCTV NOC
+            </h1>
+            <div class="w-24 h-1 bg-black mx-auto rounded-full"></div>
+        </div>
         
-        <div id="status" class="status loading">
-            <span class="refresh-indicator">⟳</span>
+        <!-- Status -->
+        <div id="status" class="mb-6 p-4 rounded-xl font-medium transition-all duration-300 text-center shadow-lg">
+            <span class="refresh-indicator inline-block mr-2">⟳</span>
             Initializing stream capture...
         </div>
         
-        <div class="image-container">
-            <img id="streamImage" style="display: none;" alt="RTSP Stream Capture">
-            <div id="placeholder" class="placeholder">
-                Waiting for first capture...
+        <!-- Image Container -->
+        <div class="relative mb-6 rounded-2xl border-2 border-white overflow-hidden shadow-2xl bg-gray-50 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] flex items-center justify-center">
+            <img id="streamImage" class="max-w-full max-h-full object-contain transition-opacity duration-300 hidden" alt="RTSP Stream Capture">
+            <div id="placeholder" class="text-gray-600 text-lg sm:text-xl font-medium text-center px-4">
+                <div class="flex flex-col items-center">
+                    <svg class="w-16 h-16 sm:w-20 sm:h-20 text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <p>Waiting for first capture...</p>
+                </div>
             </div>
         </div>
         
-        <div class="last-update" id="intervalInfo" style="margin-top: 20px;">
+        <!-- Interval Info -->
+        <div id="intervalInfo" class="text-center mb-8 px-4 py-3 bg-gray-100 border border-gray-400 rounded-xl text-black font-medium shadow-sm">
+            <svg class="w-5 h-5 inline-block mr-2 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
             Update every 5 seconds
         </div>
         
-        <div class="controls">
-            <button onclick="toggleAutoRefresh()" id="toggleBtn">Pause Auto-Refresh</button>
+        <!-- Controls -->
+        <div class="flex justify-center">
+            <button onclick="toggleAutoRefresh()" id="toggleBtn" 
+                class="group relative px-8 py-3 bg-white text-black font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border border-white hover:bg-black hover:text-white disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
+                <span class="relative z-10">Pause Auto-Refresh</span>
+            </button>
         </div>
     </div>
 
@@ -226,7 +109,18 @@
 
         function updateStatus(message, type = 'loading') {
             statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
+            
+            // Remove existing status classes
+            statusDiv.className = 'mb-6 p-4 rounded-xl font-medium transition-all duration-300 text-center shadow-lg';
+            
+            // Add appropriate status styling (black and white only)
+            if (type === 'loading') {
+                statusDiv.classList.add('bg-gray-100', 'text-black', 'border', 'border-gray-400');
+            } else if (type === 'success') {
+                statusDiv.classList.add('bg-white', 'text-black', 'border-2', 'border-black');
+            } else if (type === 'error') {
+                statusDiv.classList.add('bg-black', 'text-white', 'border', 'border-black');
+            }
         }
 
         let lastImageSrc = '';
