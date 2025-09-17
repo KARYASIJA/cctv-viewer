@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>CCTV NOC SNAPSHOT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -18,38 +21,138 @@
     </script>
     <style>
         .glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         
         .refresh-indicator {
             animation: spin 1s linear infinite;
         }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            80% { transform: scale(1.2); opacity: 0.3; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+        
+        .status-dot {
+            position: relative;
+        }
+        
+        .status-dot::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        
+        .live-indicator {
+            background: linear-gradient(45deg, #ff4444, #ff6666);
+            color: white;
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
+        }
+        
+        .smooth-corner {
+            border-radius: 1rem;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .glass {
+                margin: 0.5rem;
+            }
+            
+            button {
+                min-height: 44px;
+                font-size: 16px;
+            }
+            
+            input, select, textarea {
+                font-size: 16px;
+            }
+        }
+        
+        /* Desktop no-scroll optimization */
+        @media (min-width: 768px) {
+            body {
+                overflow: hidden;
+            }
+            
+            .main-container {
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+        
+        /* Enhanced button styling */
+        .modern-button {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 2px solid #e9ecef;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modern-button:hover {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            border-color: #000000;
+            transform: translateY(-2px);
+        }
+        
+        .modern-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .modern-button:hover::before {
+            left: 100%;
+        }
     </style>
 </head>
-<body class="bg-black min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
-    <div class="glass rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 w-full max-w-4xl border border-white">
+<body class="bg-black h-screen overflow-hidden flex items-center justify-center p-2 sm:p-4 md:p-0">
+    <div class="glass rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-6 lg:p-8 w-full max-w-4xl md:max-h-screen border border-white flex flex-col justify-center">
         <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-black mb-2">
-                CCTV NOC
-            </h1>
-            <div class="w-24 h-1 bg-black mx-auto rounded-full"></div>
+        <div class="text-center mb-4 sm:mb-6 md:mb-4 flex-shrink-0">
+            <div class="flex items-center justify-center gap-3 mb-2">
+                <h1 class="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold text-black tracking-tight">
+                    CCTV NOC
+                </h1>
+            </div>
         </div>
         
         <!-- Status -->
-        <div id="status" class="mb-6 p-4 rounded-xl font-medium transition-all duration-300 text-center shadow-lg">
-            <span class="refresh-indicator inline-block mr-2">⟳</span>
-            Initializing stream capture...
+        <div id="status" class="mb-3 sm:mb-4 md:mb-3 p-3 sm:p-4 md:p-3 rounded-xl font-medium transition-all duration-500 text-center text-sm sm:text-base flex-shrink-0 flex items-center justify-center gap-2">
+            <span class="status-text">Initializing stream capture...</span>
         </div>
         
         <!-- Image Container -->
-        <div class="relative mb-6 rounded-2xl border-2 border-white overflow-hidden shadow-2xl bg-gray-50 min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] flex items-center justify-center">
+        <div class="relative mb-4 sm:mb-6 overflow-hidden min-h-[250px] sm:min-h-[300px] md:min-h-0 flex items-center justify-center">
             <img id="streamImage" class="max-w-full max-h-full object-contain transition-opacity duration-300 hidden" alt="RTSP Stream Capture">
-            <div id="placeholder" class="text-gray-600 text-lg sm:text-xl font-medium text-center px-4">
+            <div id="placeholder" class="text-gray-600 text-base sm:text-lg md:text-xl font-medium text-center px-3 sm:px-4">
                 <div class="flex flex-col items-center">
-                    <svg class="w-16 h-16 sm:w-20 sm:h-20 text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-gray-600 mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
@@ -59,18 +162,21 @@
         </div>
         
         <!-- Interval Info -->
-        <div id="intervalInfo" class="text-center mb-8 px-4 py-3 bg-gray-100 border border-gray-400 rounded-xl text-black font-medium shadow-sm">
-            <svg class="w-5 h-5 inline-block mr-2 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            Update every 5 seconds
+        <div id="intervalInfo" class="text-center mb-3 sm:mb-4 md:mb-3 px-4 sm:px-6 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-l-4 border-black rounded-r-xl text-black font-medium text-sm sm:text-base flex-shrink-0 flex items-center justify-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-black animate-pulse"></div>
+            <span>Auto-refresh every <strong id="intervalSeconds">5</strong> seconds</span>
         </div>
         
         <!-- Controls -->
-        <div class="flex justify-center">
+        <div class="flex justify-center flex-shrink-0">
             <button onclick="toggleAutoRefresh()" id="toggleBtn" 
-                class="group relative px-8 py-3 bg-white text-black font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 border border-white hover:bg-black hover:text-white disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
-                <span class="relative z-10">Pause Auto-Refresh</span>
+                class="modern-button px-8 sm:px-10 py-3 sm:py-4 md:py-3 text-black font-bold rounded-2xl shadow-xl transform transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none text-sm sm:text-base tracking-wide">
+                <span class="relative z-10 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Pause Auto-Refresh
+                </span>
             </button>
         </div>
     </div>
@@ -104,22 +210,28 @@
 
         function updateIntervalInfo() {
             const seconds = captureInterval / 1000;
-            intervalInfoEl.textContent = `Update every ${seconds} second${seconds !== 1 ? 's' : ''}`;
+            const intervalSecondsEl = document.getElementById('intervalSeconds');
+            if (intervalSecondsEl) {
+                intervalSecondsEl.textContent = seconds;
+            }
         }
 
         function updateStatus(message, type = 'loading') {
-            statusDiv.textContent = message;
+            const statusTextEl = statusDiv.querySelector('.status-text');
+            if (statusTextEl) {
+                statusTextEl.textContent = message;
+            }
             
             // Remove existing status classes
-            statusDiv.className = 'mb-6 p-4 rounded-xl font-medium transition-all duration-300 text-center shadow-lg';
+            statusDiv.className = 'mb-3 sm:mb-4 md:mb-3 p-3 sm:p-4 md:p-3 rounded-xl font-medium transition-all duration-500 text-center text-sm sm:text-base flex-shrink-0 flex items-center justify-center gap-2';
             
-            // Add appropriate status styling (black and white only)
+            // Add appropriate status styling with modern colors
             if (type === 'loading') {
-                statusDiv.classList.add('bg-gray-100', 'text-black', 'border', 'border-gray-400');
+                statusDiv.classList.add('bg-blue-50', 'text-blue-800', 'border', 'border-blue-200');
             } else if (type === 'success') {
-                statusDiv.classList.add('bg-white', 'text-black', 'border-2', 'border-black');
+                statusDiv.classList.add('bg-green-50', 'text-green-800', 'border', 'border-green-200');
             } else if (type === 'error') {
-                statusDiv.classList.add('bg-black', 'text-white', 'border', 'border-black');
+                statusDiv.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
             }
         }
 
@@ -169,13 +281,27 @@
         function toggleAutoRefresh() {
             autoRefreshEnabled = !autoRefreshEnabled;
             
+            const buttonText = toggleBtn.querySelector('span');
+            const buttonIcon = toggleBtn.querySelector('svg path');
+            
             if (autoRefreshEnabled) {
-                toggleBtn.textContent = 'Pause Auto-Refresh';
+                buttonText.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Pause Auto-Refresh
+                `;
                 startAutoRefresh();
                 updateStatus('Auto-refresh enabled', 'success');
                 intervalInfoEl.style.opacity = '1';
             } else {
-                toggleBtn.textContent = 'Resume Auto-Refresh';
+                buttonText.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Resume Auto-Refresh
+                `;
                 clearInterval(refreshInterval);
                 updateStatus('Auto-refresh paused', 'loading');
                 intervalInfoEl.style.opacity = '0.5';
