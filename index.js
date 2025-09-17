@@ -57,6 +57,14 @@ app.use(express.static('public'), basicAuth);
 // Apply basic auth to all routes
 app.use(basicAuth);
 
+// Provide configuration to frontend
+app.get('/config', (req, res) => {
+    res.json({
+        captureInterval: CAPTURE_INTERVAL,
+        authEnabled: AUTH_ENABLED
+    });
+});
+
 // Serve the current image
 app.get('/current-image', (req, res) => {
     if (fs.existsSync(CURRENT_IMAGE)) {

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCTV NOC SNAPSHOT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            border: 2px solid #2c2c2c;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #2c2c2c;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .status.loading {
+            background: #f5f5f5;
+            color: #333333;
+            border: 1px solid #cccccc;
+        }
+
+        .status.success {
+            background: #ffffff;
+            color: #2c2c2c;
+            border: 1px solid #2c2c2c;
+        }
+
+        .status.error {
+            background: #2c2c2c;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+        }
+
+        .image-container {
+            margin: 20px 0;
+            border-radius: 15px;
+            border: 2px solid #2c2c2c;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: #f8f9fa;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #streamImage {
+            max-width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            transition: opacity 0.3s ease;
+        }
+
+        .placeholder {
+            color: #666666;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .last-update {
+            color: #666666;
+            font-size: 0.9em;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border: 1px solid #cccccc;
+            border-radius: 10px;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+            margin-right: 5px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #2c2c2c;
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            background: #ffffff;
+            color: #2c2c2c;
+            border: 2px solid #2c2c2c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .image-container {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CCTV NOC</h1>
+        
+        <div id="status" class="status loading">
+            <span class="refresh-indicator">⟳</span>
+            Initializing stream capture...
+        </div>
+        
+        <div class="image-container">
+            <img id="streamImage" style="display: none;" alt="RTSP Stream Capture">
+            <div id="placeholder" class="placeholder">
+                Waiting for first capture...
+            </div>
+        </div>
+        
+        <div class="last-update" id="intervalInfo" style="margin-top: 20px;">
+            Update every 5 seconds
+        </div>
+        
+        <div class="controls">
+            <button onclick="toggleAutoRefresh()" id="toggleBtn">Pause Auto-Refresh</button>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshEnabled = true;
+        let refreshInterval;
+        let captureInterval = 5000; // Default, will be updated from server
+        
+        const statusDiv = document.getElementById('status');
+        const imageEl = document.getElementById('streamImage');
+        const placeholderEl = document.getElementById('placeholder');
+        const intervalInfoEl = document.getElementById('intervalInfo');
+        const toggleBtn = document.getElementById('toggleBtn');
+
+        // Get capture interval from server
+        async function getCaptureInterval() {
+            try {
+                const response = await fetch('/config');
+                if (response.ok) {
+                    const config = await response.json();
+                    captureInterval = config.captureInterval || 5000;
+                    console.log(`Using capture interval: ${captureInterval}ms`);
+                    updateIntervalInfo();
+                }
+            } catch (error) {
+                console.log('Could not fetch capture interval, using default:', captureInterval);
+                updateIntervalInfo();
+            }
+        }
+
+        function updateIntervalInfo() {
+            const seconds = captureInterval / 1000;
+            intervalInfoEl.textContent = `Update every ${seconds} second${seconds !== 1 ? 's' : ''}`;
+        }
+
+        function updateStatus(message, type = 'loading') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        let lastImageSrc = '';
+        let isLoading = false;
+
+        function loadImage() {
+            if (isLoading) return; // Prevent multiple concurrent requests
+            
+            isLoading = true;
+            updateStatus('Capturing new image...', 'loading');
+            
+            const timestamp = Date.now();
+            const img = new Image();
+            
+            img.onload = function() {
+                // Only update if the image has actually changed
+                if (this.src !== lastImageSrc) {
+                    imageEl.src = this.src;
+                    imageEl.style.display = 'block';
+                    placeholderEl.style.display = 'none';
+                    updateStatus('Image updated successfully', 'success');
+                    lastImageSrc = this.src;
+                } else {
+                    updateStatus('Image up to date', 'success');
+                }
+                isLoading = false;
+            };
+            
+            img.onerror = function() {
+                updateStatus('Failed to load image', 'error');
+                isLoading = false;
+                setTimeout(() => {
+                    if (autoRefreshEnabled) {
+                        updateStatus('Auto-refreshing...', 'loading');
+                    }
+                }, 2000);
+            };
+            
+            img.src = `/current-image?t=${timestamp}`;
+        }
+
+        function refreshImage() {
+            loadImage();
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            
+            if (autoRefreshEnabled) {
+                toggleBtn.textContent = 'Pause Auto-Refresh';
+                startAutoRefresh();
+                updateStatus('Auto-refresh enabled', 'success');
+                intervalInfoEl.style.opacity = '1';
+            } else {
+                toggleBtn.textContent = 'Resume Auto-Refresh';
+                clearInterval(refreshInterval);
+                updateStatus('Auto-refresh paused', 'loading');
+                intervalInfoEl.style.opacity = '0.5';
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            
+            refreshInterval = setInterval(() => {
+                if (autoRefreshEnabled) {
+                    loadImage();
+                }
+            }, captureInterval); // Use dynamic capture interval
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            await getCaptureInterval(); // Get interval from server first
+            loadImage();
+            startAutoRefresh();
+        });
+
+        // Handle page visibility changes - pause when not visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearInterval(refreshInterval);
+                console.log('Page hidden, pausing auto-refresh');
+            } else if (autoRefreshEnabled) {
+                console.log('Page visible, resuming auto-refresh');
+                startAutoRefresh();
+                loadImage(); // Immediate refresh when page becomes visible
+            }
+        });
+
+        // Handle network status changes
+        window.addEventListener('online', function() {
+            console.log('Connection restored');
+            if (autoRefreshEnabled) {
+                loadImage();
+            }
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('Connection lost');
+            updateStatus('Connection lost', 'error');
+        });
+    </script>
+</body>
+</html>
