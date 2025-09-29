@@ -19,338 +19,111 @@
             }
         }
     </script>
-    <style>
-        .glass {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        
-        .refresh-indicator {
-            animation: spin 1s linear infinite;
-        }
-        
-        .pulse-ring {
-            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
-        }
-        
-        @keyframes pulse-ring {
-            0% { transform: scale(0.8); opacity: 1; }
-            80% { transform: scale(1.2); opacity: 0.3; }
-            100% { transform: scale(1.4); opacity: 0; }
-        }
-        
-        .status-dot {
-            position: relative;
-        }
-        
-        .status-dot::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: currentColor;
-        }
-        
-        .live-indicator {
-            background: linear-gradient(45deg, #ff4444, #ff6666);
-            color: white;
-            animation: pulse 2s ease-in-out infinite alternate;
-        }
-        
-        @keyframes pulse {
-            from { opacity: 0.8; }
-            to { opacity: 1; }
-        }
-        
-        .smooth-corner {
-            border-radius: 1rem;
-        }
-        
-        /* Mobile optimizations */
-        @media (max-width: 640px) {
-            .glass {
-                margin: 0.5rem;
-            }
-            
-            button {
-                min-height: 44px;
-                font-size: 16px;
-            }
-            
-            input, select, textarea {
-                font-size: 16px;
-            }
-        }
-        
-        /* Desktop no-scroll optimization */
-        @media (min-width: 768px) {
-            body {
-                overflow: hidden;
-            }
-            
-            .main-container {
-                height: 100vh;
-                overflow: hidden;
-            }
-        }
-        
-        /* Enhanced button styling */
-        .modern-button {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border: 2px solid #e9ecef;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .modern-button:hover {
-            background: linear-gradient(135deg, #000000 0%, #333333 100%);
-            border-color: #000000;
-            transform: translateY(-2px);
-        }
-        
-        .modern-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        
-        .modern-button:hover::before {
-            left: 100%;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.cdnfonts.com/css/helvetica-neue-55" rel="stylesheet">
 </head>
-<body class="bg-black h-screen overflow-hidden flex items-center justify-center p-2 sm:p-4 md:p-0">
-    <div class="glass rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-6 lg:p-8 w-full max-w-4xl md:max-h-screen border border-white flex flex-col justify-center">
-        <!-- Header -->
-        <div class="text-center mb-4 sm:mb-6 md:mb-4 flex-shrink-0">
-            <div class="flex items-center justify-center gap-3 mb-2">
-                <h1 class="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold text-black tracking-tight">
-                    CCTV NOC
-                </h1>
-            </div>
+<body data-focus="true" class="antialiased group/body overflow-auto bg-zinc-900 text-zinc-50 data-[focus=false]:!pointer-events-none">
+<div id="overlay" class="absolute inset-0 group-data-[focus=true]/body:hidden flex items-center justify-center bg-black/50 backdrop-blur-lg">Out of Focus</div>
+<main class="flex flex-col h-screen">
+    <!-- Header -->
+    <header class="p-3 text-center text-sky-100">
+        <div class="py-6 max-w-2xl mx-auto space-y-1">
+            <h1 class="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold tracking-wide hover:tracking-widest hover:text-sky-200 transition-all select-none">
+                CCTV NOC
+            </h1>
         </div>
-        
+
         <!-- Status -->
-        <div id="status" class="mb-3 sm:mb-4 md:mb-3 p-3 sm:p-4 md:p-3 rounded-xl font-medium transition-all duration-500 text-center text-sm sm:text-base flex-shrink-0 flex items-center justify-center gap-2">
+        <div id="status"
+             data-status="idle"
+             class="
+                    border mb-4 max-w-96 w-full mx-auto bg-gradient-to-r transition-all duration-500 text-center p-3 rounded-xl font-medium text-sm sm:text-base
+                    from-zinc-800/15 to-zinc-800/25 text-zinc-100 border-zinc-200
+                    data-[status=pending]:from-amber-800/15 data-[status=pending]:to-amber-800/25 data-[status=pending]:text-amber-100 data-[status=pending]:border-amber-200
+                    data-[status=loading]:from-blue-800/15 data-[status=loading]:to-blue-800/25 data-[status=loading]:text-blue-100 data-[status=loading]:border-blue-200
+                    data-[status=success]:from-green-800/15 data-[status=success]:to-green-800/25 data-[status=success]:text-green-100 data-[status=success]:border-green-200
+                    data-[status=error]:from-red-800/15 data-[status=error]:to-red-800/25 data-[status=error]:text-red-100 data-[status=error]:border-red-200
+            ">
             <span class="status-text">Initializing stream capture...</span>
         </div>
-        
-        <!-- Image Container -->
-        <div class="relative mb-4 sm:mb-6 overflow-hidden min-h-[250px] sm:min-h-[300px] md:min-h-0 flex items-center justify-center">
-            <img id="streamImage" class="max-w-full max-h-full object-contain transition-opacity duration-300 hidden" alt="RTSP Stream Capture">
-            <div id="placeholder" class="text-gray-600 text-base sm:text-lg md:text-xl font-medium text-center px-3 sm:px-4">
-                <div class="flex flex-col items-center">
-                    <svg class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-gray-600 mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <p>Waiting for first capture...</p>
-                </div>
+    </header>
+
+    <!-- Image Container -->
+    <div class="flex-1 flex items-center justify-center group/img">
+        <img
+                id="streamImage"
+                class="max-w-screen md:max-w-4xl object-contain transition-opacity duration-300 hidden shadow-xl select-none shadow-zinc-800"
+                alt="RTSP Stream Capture"
+                draggable="false"
+                src="">
+        <div id="placeholder"
+             class="text-gray-600 text-base sm:text-lg md:text-xl font-medium text-sky-200 text-center px-3 sm:px-4">
+            <div class="flex flex-col items-center animate-pulse">
+                <svg class="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 mb-3 sm:mb-4 fill-transparent"
+                     stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <p>Starting program...</p>
             </div>
         </div>
-        
-        <!-- Interval Info -->
-        <div id="intervalInfo" class="text-center mb-3 sm:mb-4 md:mb-3 px-4 sm:px-6 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-l-4 border-black rounded-r-xl text-black font-medium text-sm sm:text-base flex-shrink-0 flex items-center justify-center gap-2">
-            <div class="w-3 h-3 rounded-full bg-black animate-pulse"></div>
-            <span>Auto-refresh every <strong id="intervalSeconds">5</strong> seconds</span>
-        </div>
-        
-        <!-- Controls -->
-        <div class="flex justify-center flex-shrink-0">
-            <button onclick="toggleAutoRefresh()" id="toggleBtn" 
-                class="modern-button px-8 sm:px-10 py-3 sm:py-4 md:py-3 text-black font-bold rounded-2xl shadow-xl transform transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none text-sm sm:text-base tracking-wide">
-                <span class="relative z-10 flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    Pause Auto-Refresh
-                </span>
-            </button>
-        </div>
+    </div>
+    <!-- Interval Info -->
+    <div id="intervalInfo" class="max-w-xl mx-auto w-full text-center bg-gradient-to-r from-transparent via-zinc-800 to-transparent flex items-center justify-center gap-3 text-sky-100 p-3">
+        <div class="w-3 h-3 aspect-square rounded-full bg-sky-100 animate-pulse"></div>
+        <span>Auto-refreshes every <strong id="intervalSeconds">5</strong> seconds</span>
     </div>
 
-    <script>
-        let autoRefreshEnabled = true;
-        let refreshInterval;
-        let captureInterval = 5000; // Default, will be updated from server
-        
-        const statusDiv = document.getElementById('status');
-        const imageEl = document.getElementById('streamImage');
-        const placeholderEl = document.getElementById('placeholder');
-        const intervalInfoEl = document.getElementById('intervalInfo');
-        const toggleBtn = document.getElementById('toggleBtn');
-
-        // Get capture interval from server
-        async function getCaptureInterval() {
-            try {
-                const response = await fetch('/config');
-                if (response.ok) {
-                    const config = await response.json();
-                    captureInterval = config.captureInterval || 5000;
-                    console.log(`Using capture interval: ${captureInterval}ms`);
-                    updateIntervalInfo();
-                }
-            } catch (error) {
-                console.log('Could not fetch capture interval, using default:', captureInterval);
-                updateIntervalInfo();
-            }
-        }
-
-        function updateIntervalInfo() {
-            const seconds = captureInterval / 1000;
-            const intervalSecondsEl = document.getElementById('intervalSeconds');
-            if (intervalSecondsEl) {
-                intervalSecondsEl.textContent = seconds;
-            }
-        }
-
-        function updateStatus(message, type = 'loading') {
-            const statusTextEl = statusDiv.querySelector('.status-text');
-            if (statusTextEl) {
-                statusTextEl.textContent = message;
-            }
-            
-            // Remove existing status classes
-            statusDiv.className = 'mb-3 sm:mb-4 md:mb-3 p-3 sm:p-4 md:p-3 rounded-xl font-medium transition-all duration-500 text-center text-sm sm:text-base flex-shrink-0 flex items-center justify-center gap-2';
-            
-            // Add appropriate status styling with modern colors
-            if (type === 'loading') {
-                statusDiv.classList.add('bg-blue-50', 'text-blue-800', 'border', 'border-blue-200');
-            } else if (type === 'success') {
-                statusDiv.classList.add('bg-green-50', 'text-green-800', 'border', 'border-green-200');
-            } else if (type === 'error') {
-                statusDiv.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
-            }
-        }
-
-        let lastImageSrc = '';
-        let isLoading = false;
-
-        function loadImage() {
-            if (isLoading) return; // Prevent multiple concurrent requests
-            
-            isLoading = true;
-            updateStatus('Capturing new image...', 'loading');
-            
-            const timestamp = Date.now();
-            const img = new Image();
-            
-            img.onload = function() {
-                // Only update if the image has actually changed
-                if (this.src !== lastImageSrc) {
-                    imageEl.src = this.src;
-                    imageEl.style.display = 'block';
-                    placeholderEl.style.display = 'none';
-                    updateStatus('Image updated successfully', 'success');
-                    lastImageSrc = this.src;
-                } else {
-                    updateStatus('Image up to date', 'success');
-                }
-                isLoading = false;
-            };
-            
-            img.onerror = function() {
-                updateStatus('Failed to load image', 'error');
-                isLoading = false;
-                setTimeout(() => {
-                    if (autoRefreshEnabled) {
-                        updateStatus('Auto-refreshing...', 'loading');
-                    }
-                }, 2000);
-            };
-            
-            img.src = `/current-image?t=${timestamp}`;
-        }
-
-        function refreshImage() {
-            loadImage();
-        }
-
-        function toggleAutoRefresh() {
-            autoRefreshEnabled = !autoRefreshEnabled;
-            
-            const buttonText = toggleBtn.querySelector('span');
-            const buttonIcon = toggleBtn.querySelector('svg path');
-            
-            if (autoRefreshEnabled) {
-                buttonText.innerHTML = `
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    <!-- Controls -->
+    <footer class="flex flex-col items-center gap-4">
+        <div class="py-6 w-full px-3 max-w-lg space-y-6 sm:space-y-4">
+            <!-- CTA Btn -->
+            <div class="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
+                <a id="downloadBtn" draggable="false" data-allow-download="false"
+                   class="data-[allow-download=false]:opacity-50 data-[allow-download=true]:cursor-pointer active:scale-95 cursor-not-allowed flex-1 flex justify-center items-center gap-2 font-medium border-2 py-2 px-3 rounded-lg transition-all hover:-translate-y-px hover:shadow-lg bg-sky-800/10 hover:bg-sky-800/25 border-sky-700 hover:shadow-zinc-700/50 hover:text-sky-400 text-sky-200">
+                    <svg class="w-6 h-6 fill-transparent" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17 17H17.01M17.4 14H18C18.9319 14 19.3978 14 19.7654 14.1522C20.2554 14.3552 20.6448 14.7446 20.8478 15.2346C21 15.6022 21 16.0681 21 17C21 17.9319 21 18.3978 20.8478 18.7654C20.6448 19.2554 20.2554 19.6448 19.7654 19.8478C19.3978 20 18.9319 20 18 20H6C5.06812 20 4.60218 20 4.23463 19.8478C3.74458 19.6448 3.35523 19.2554 3.15224 18.7654C3 18.3978 3 17.9319 3 17C3 16.0681 3 15.6022 3.15224 15.2346C3.35523 14.7446 3.74458 14.3552 4.23463 14.1522C4.60218 14 5.06812 14 6 14H6.6M12 15V4M12 15L9 12M12 15L15 12"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    Pause Auto-Refresh
-                `;
-                startAutoRefresh();
-                updateStatus('Auto-refresh enabled', 'success');
-                intervalInfoEl.style.opacity = '1';
-            } else {
-                buttonText.innerHTML = `
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    <span class="select-none text-sm md:text-base truncate">Download Snapshot</span>
+                </a>
+                <button onclick="toggleAutoRefresh()" id="pauseBtn"
+                        class="active:scale-95 flex-1 flex justify-center items-center gap-2 font-medium border-2 py-2 px-3 rounded-lg transition-all hover:-translate-y-px hover:shadow-lg bg-sky-800/10 hover:bg-sky-800/25 border-sky-700 hover:shadow-zinc-700/50 text-sky-200 hover:text-sky-400">
+                    <svg class="w-6 h-6 fill-transparent" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    Resume Auto-Refresh
-                `;
-                clearInterval(refreshInterval);
-                updateStatus('Auto-refresh paused', 'loading');
-                intervalInfoEl.style.opacity = '0.5';
-            }
-        }
+                    <span class="text-sm sm:text-base truncate">Pause Auto-Refresh</span>
+                </button>
+            </div>
+            <pre class="text-sm sm:text-base opacity-75 tracking-widest text-center">EYES OF <a href="https://karyasija.id" class="underline xl:no-underline xl:hover:underline" target="_blank">KARYASIJA</a></pre>
 
-        function startAutoRefresh() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-            
-            refreshInterval = setInterval(() => {
-                if (autoRefreshEnabled) {
-                    loadImage();
-                }
-            }, captureInterval); // Use dynamic capture interval
-        }
+            <!--
+            <span id="countdown"
+                  class="pointer-events-none select-none absolute inset-0 flex items-center justify-center text-9xl animate-ping duration-1000 text-black">
+                5
+            </span>
+            -->
+            <!--
+            <button disabled
+                    class="opacity-50 pointer-events-none mx-auto transition-all relative group px-3 py-2 border flex flex-col gap-0.5 bg-sky-50 border-sky-200 text-sky-800 rounded-2xl">
+                <span class="text-2xl md:text-3xl font-semibold">Take A Photo!</span>
+                <span class="text-sm md:text-base text-sky-700">Will start 5s countdown after next snapshot</span>
+                <svg class="transition-all absolute group-hover:rotate-12 group-hover:translate-x-2 bottom-4 -right-2 w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-gray-600 mb-3 sm:mb-4 fill-sky-100/75 text-sky-800"
+                     stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </button>
+            -->
+        </div>
+    </footer>
+</main>
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async function() {
-            await getCaptureInterval(); // Get interval from server first
-            loadImage();
-            startAutoRefresh();
-        });
-
-        // Handle page visibility changes - pause when not visible
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                clearInterval(refreshInterval);
-                console.log('Page hidden, pausing auto-refresh');
-            } else if (autoRefreshEnabled) {
-                console.log('Page visible, resuming auto-refresh');
-                startAutoRefresh();
-                loadImage(); // Immediate refresh when page becomes visible
-            }
-        });
-
-        // Handle network status changes
-        window.addEventListener('online', function() {
-            console.log('Connection restored');
-            if (autoRefreshEnabled) {
-                loadImage();
-            }
-        });
-
-        window.addEventListener('offline', function() {
-            console.log('Connection lost');
-            updateStatus('Connection lost', 'error');
-        });
-    </script>
+<script src="script.js"></script>
 </body>
 </html>
