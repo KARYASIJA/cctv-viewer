@@ -1,7 +1,7 @@
 services:
-  cctv-noc-snapshot:
+  cctv-viewer:
     build: .
-    container_name: cctv-noc-snapshot
+    container_name: cctv-viewer
     ports:
       - "3000:3000"
     environment:

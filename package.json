@@ -1,5 +1,5 @@
 {
-  "name": "cctv-noc-snapshot",
+  "name": "cctv-viewer",
   "version": "1.0.0",
   "description": "RTSP stream photo capture web application",
   "main": "index.js",
