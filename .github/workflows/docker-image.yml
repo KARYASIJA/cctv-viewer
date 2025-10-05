@@ -18,6 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Log in to GitHub Container Registry (GHCR)
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -25,13 +26,28 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Extract short commit SHA
+      - name: Get short SHA
+        id: vars
+        run: echo "sha_short=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      # Build and push Docker image
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/$(basename ${{ github.repository }}):latest
-            ghcr.io/${{ github.repository_owner }}/$(basename ${{ github.repository }}):${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
 
       - name: Show image info
-        run: echo "Image pushed to ghcr.io/${{ github.repository_owner }}/$(basename ${{ github.repository }})"
+        run: |
+          echo "Image pushed:"
+          echo "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest"
+          echo "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}"
+          echo "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}"
