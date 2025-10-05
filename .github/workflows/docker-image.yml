@@ -18,7 +18,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Log in to GitHub Container Registry (GHCR)
+      # Convert org/repo to lowercase
+      - name: Prepare variables
+        id: vars
+        run: |
+          ORG_LOWER=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
+          SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          echo "org=${ORG_LOWER}" >> $GITHUB_OUTPUT
+          echo "repo=${REPO_NAME}" >> $GITHUB_OUTPUT
+          echo "sha_short=${SHA_SHORT}" >> $GITHUB_OUTPUT
+
+      # Log in to GHCR
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -26,20 +37,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Extract short commit SHA
-      - name: Get short SHA
-        id: vars
-        run: echo "sha_short=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
-
       # Build and push Docker image
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}
-            ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}
+            ghcr.io/${{ steps.vars.outputs.org }}/${{ steps.vars.outputs.repo }}:latest
+            ghcr.io/${{ steps.vars.outputs.org }}/${{ steps.vars.outputs.repo }}:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ steps.vars.outputs.org }}/${{ steps.vars.outputs.repo }}:${{ github.ref_name }}
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -48,6 +54,6 @@ jobs:
       - name: Show image info
         run: |
           echo "Image pushed:"
-          echo "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:latest"
-          echo "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ steps.vars.outputs.sha_short }}"
-          echo "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.ref_name }}"
+          echo "ghcr.io/${{ steps.vars.outputs.org }}/${{ steps.vars.outputs.repo }}:latest"
+          echo "ghcr.io/${{ steps.vars.outputs.org }}/${{ steps.vars.outputs.repo }}:${{ steps.vars.outputs.sha_short }}"
+          echo "ghcr.io/${{ steps.vars.outputs.org }}/${{ steps.vars.outputs.repo }}:${{ github.ref_name }}"
